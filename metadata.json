@@ -1,0 +1,5 @@
+{
+  "name": "Terrastay Web Portal",
+  "description": "Property management extension for the Terrastay ecosystem, serving Property Agents and Admins in Ebonyi State (Permanent Site, Presco, CAS).",
+  "requestFramePermissions": []
+}

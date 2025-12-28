@@ -1,0 +1,71 @@
+/* Global Styles */
+:root {
+    --neon-lime: #c0ff72;
+    --bg-dark: #0f1113;
+    --card-dark: #16181b;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: white;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+    background: rgba(22, 24, 27, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #444;
+}
+
+/* Animations */
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 5px rgba(192, 255, 114, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(192, 255, 114, 0.4);
+    }
+
+    100% {
+        box-shadow: 0 0 5px rgba(192, 255, 114, 0.2);
+    }
+}
+
+.animate-glow {
+    animation: glow 3s infinite;
+}
+
+/* Input Styles */
+input,
+textarea,
+select {
+    background: var(--card-dark) !important;
+    color: white !important;
+}
