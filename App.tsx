@@ -10,15 +10,17 @@ import PropertiesView from './components/PropertiesView';
 import BookingsView from './components/BookingsView';
 import LodgeFormModal from './components/LodgeFormModal';
 import SettingsView from './components/SettingsView';
-import Auth from './components/Auth';
+import Auth from './components/Auth.tsx';
 import UsersView from './components/UsersView';
 import ChatInboxView from './components/ChatInboxView';
 import AdminBookingsView from './components/AdminBookingsView';
 import AdminVerificationView from './components/AdminVerificationView';
+import IdentityVerificationView from './components/IdentityVerificationView';
+import VerificationBanner from './components/VerificationBanner';
 import { supabase } from './lib/supabase';
 import { X } from 'lucide-react';
 
-export type ViewType = 'agent' | 'admin' | 'properties' | 'tenants' | 'bookings' | 'settings' | 'support' | 'users' | 'admin_bookings' | 'admin_verification' | 'chat';
+export type ViewType = 'agent' | 'admin' | 'properties' | 'tenants' | 'bookings' | 'settings' | 'support' | 'users' | 'admin_bookings' | 'admin_verification' | 'chat' | 'kyc';
 
 const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -79,6 +81,8 @@ const App: React.FC = () => {
         return <AdminBookingsView />;
       case 'admin_verification':
         return <AdminVerificationView />;
+      case 'kyc':
+        return <IdentityVerificationView />;
       default:
         return (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
@@ -124,7 +128,7 @@ const App: React.FC = () => {
   }
 
   if (!session) {
-    return <Auth onLogin={() => { }} />;
+    return <Auth onSuccess={() => { }} />;
   }
 
   return (
@@ -152,6 +156,7 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <main className="flex-1 transition-all duration-300 w-full md:ml-64 p-4 md:p-8 bg-[#0f1113]">
         <div className="max-w-[1600px] mx-auto space-y-8">
+          <VerificationBanner onAction={setCurrentView} />
           <Header
             onMenuClick={toggleSidebar}
             viewTitle={getViewTitle()}

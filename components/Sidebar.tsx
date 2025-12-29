@@ -14,7 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        supabase.from('profiles').select('role').eq('id', user.id).single()
+        supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
           .then(({ data }) => setRole(data?.role || null));
       }
     });
@@ -25,6 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
     { icon: <Building2 size={20} />, label: 'My Lodges', id: 'properties' as const },
     { icon: <MessageSquare size={20} />, label: 'Messages', id: 'chat' as const },
     { icon: <CalendarCheck size={20} />, label: 'Inspections', id: 'bookings' as const },
+    { icon: <ShieldCheck size={20} />, label: 'Identity Verification', id: 'kyc' as const },
   ];
 
   const adminItems = [

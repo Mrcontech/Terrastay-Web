@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Bell, Plus, Menu, User } from 'lucide-react';
+import { Search, Bell, Plus, Menu, User, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface HeaderProps {
@@ -14,7 +14,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, viewTitle = "Manage Proper
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        supabase.from('profiles').select('*').eq('id', user.id).single()
+        supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
           .then(({ data }) => setProfile(data));
       }
     });
@@ -72,8 +72,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, viewTitle = "Manage Proper
             )}
           </div>
           <div className="hidden lg:block text-left">
-            <p className="text-xs font-semibold leading-none truncate max-w-[100px]">{profile?.full_name || 'Loading...'}</p>
-            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-tighter">{profile?.role || 'User'}</p>
+            <div className="flex items-center gap-1">
+              <p className="text-xs font-semibold leading-none truncate max-w-[100px]">{profile?.full_name || 'Loading...'}</p>
+              {profile?.is_identity_verified && (
+                <div className="p-0.5 bg-[#c0ff72] rounded-full text-black flex items-center justify-center">
+                  <ShieldCheck size={8} fill="black" />
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-tighter">{profile?.is_identity_verified ? 'Verified Agent' : (profile?.role || 'User')}</p>
           </div>
         </div>
       </div>

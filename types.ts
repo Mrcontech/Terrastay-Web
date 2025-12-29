@@ -41,5 +41,9 @@ export interface UserProfile {
   dob?: string;
   avatar_url?: string;
   role?: 'student' | 'agent' | 'admin';
+  nin?: string;
+  selfie_url?: string;
+  verification_status?: 'none' | 'pending' | 'approved' | 'rejected';
+  is_identity_verified?: boolean;
   created_at?: string;
 }
