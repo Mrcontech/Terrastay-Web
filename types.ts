@@ -47,3 +47,22 @@ export interface UserProfile {
   is_identity_verified?: boolean;
   created_at?: string;
 }
+export interface Payment {
+  id: string;
+  user_id: string;
+  lodge_id: string;
+  amount: string;
+  currency: string;
+  status: 'pending' | 'success' | 'failed';
+  reference: string;
+  metadata?: {
+    check_in?: string;
+    check_out?: string;
+    lodgeTitle?: string;
+    base_amount?: number;
+    tax_amount?: number;
+  };
+  created_at: string;
+  lodges?: Lodge;
+  profiles?: UserProfile;
+}

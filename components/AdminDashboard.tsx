@@ -13,7 +13,8 @@ import {
   Search,
   MoreHorizontal,
   Home,
-  Loader2
+  Loader2,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Lodge, UserProfile } from '../types';
@@ -40,11 +41,39 @@ const AdminDashboard: React.FC = () => {
       const { count: agentCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'agent');
       const { count: studentCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
       const { count: pendingCount } = await supabase.from('lodges').select('*', { count: 'exact', head: true }).eq('is_verified', false);
+      const { data: paymentsRes } = await supabase.from('payments').select('amount, metadata').eq('status', 'success');
+
+      let totalRevenue = 0;
+      let totalTax = 0;
+      let totalPlatformFee = 0;
+
+      (paymentsRes || []).forEach(p => {
+        const amount = Number(p.amount) || 0;
+        totalRevenue += amount;
+
+        if (p.metadata) {
+          // Tax is explicitly stored
+          const tax = Number(p.metadata.tax_amount) || 0;
+          totalTax += tax;
+
+          // Platform Fee is inside the base listing price (4% markup)
+          // Base Amount = Original Price * 1.04
+          // Original Price = Base Amount / 1.04
+          // Fee = Base Amount - Original Price
+          const baseAmount = Number(p.metadata.base_amount) || 0;
+          const originalPrice = baseAmount / 1.04;
+          const fee = baseAmount - originalPrice;
+          totalPlatformFee += fee;
+        }
+      });
 
       setStats([
-        { label: 'Total Agents', value: (agentCount || 0).toString(), trend: 'Verified partners', icon: <ShieldCheck size={18} className="text-[#c0ff72]" /> },
-        { label: 'Mobile Users', value: (studentCount || 0).toString(), trend: 'Active students', icon: <UserCheck size={18} className="text-blue-400" /> },
-        { label: 'Pending Verifications', value: (pendingCount || 0).toString(), trend: 'Urgent queue', icon: <AlertCircle size={18} className="text-yellow-400" /> },
+        { label: 'Gross Revenue', value: `₦${Math.floor(totalRevenue).toLocaleString()}`, trend: 'Platform total', icon: <TrendingUp size={18} className="text-[#c0ff72]" /> },
+        { label: 'Platform Fees', value: `₦${Math.floor(totalPlatformFee).toLocaleString()}`, trend: '4% markup', icon: <Activity size={18} className="text-orange-400" /> },
+        { label: 'Tax Collected', value: `₦${Math.floor(totalTax).toLocaleString()}`, trend: '2% processing', icon: <ShieldCheck size={18} className="text-blue-400" /> },
+        { label: 'Total Agents', value: (agentCount || 0).toString(), trend: 'Verified partners', icon: <ShieldCheck size={18} className="text-blue-400" /> },
+        { label: 'Platform Users', value: (studentCount || 0).toString(), trend: 'Active students', icon: <UserCheck size={18} className="text-purple-400" /> },
+        { label: 'Verification Queue', value: (pendingCount || 0).toString(), trend: 'Pending lodges', icon: <AlertCircle size={18} className="text-yellow-400" /> },
       ]);
 
       // 2. Fetch Pending Lodges

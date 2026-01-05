@@ -6,15 +6,53 @@ import { Lodge } from '../types';
 
 interface PropertiesViewProps {
   onAddLodge: () => void;
+  onEditLodge: (lodge: Lodge) => void;
 }
 
-const PropertiesView: React.FC<PropertiesViewProps> = ({ onAddLodge }) => {
+const PropertiesView: React.FC<PropertiesViewProps> = ({ onAddLodge, onEditLodge }) => {
   const [lodges, setLodges] = useState<Lodge[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this lodge? This action cannot be undone.')) return;
+
+    try {
+      const { error } = await supabase
+        .from('lodges')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setLodges(prev => prev.filter(l => l.id !== id));
+    } catch (error: any) {
+      alert(error.message || 'Error deleting lodge');
+    }
+  };
 
   useEffect(() => {
     fetchMyLodges();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('properties_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lodges'
+        },
+        () => {
+          fetchMyLodges();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchMyLodges = async () => {
@@ -117,9 +155,43 @@ const PropertiesView: React.FC<PropertiesViewProps> = ({ onAddLodge }) => {
                       <MapPin size={12} /> {lodge.area}
                     </p>
                   </div>
-                  <button className="p-1 text-gray-500 hover:text-white flex-shrink-0">
-                    <MoreVertical size={20} />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveMenu(activeMenu === lodge.id ? null : lodge.id)}
+                      className="p-1 text-gray-500 hover:text-white flex-shrink-0 transition-colors"
+                    >
+                      <MoreVertical size={20} />
+                    </button>
+
+                    {activeMenu === lodge.id && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setActiveMenu(null)}
+                        />
+                        <div className="absolute right-0 mt-2 w-36 bg-[#212429] border border-white/10 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                          <button
+                            onClick={() => {
+                              onEditLodge(lodge);
+                              setActiveMenu(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-300 hover:bg-[#c0ff72] hover:text-black transition-all flex items-center gap-2"
+                          >
+                            <Plus size={14} className="rotate-45" /> Edit Details
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDelete(lodge.id);
+                              setActiveMenu(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500 hover:text-white transition-all border-t border-white/5"
+                          >
+                            Delete Listing
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-4 flex items-center justify-between pt-4 border-t border-white/5">

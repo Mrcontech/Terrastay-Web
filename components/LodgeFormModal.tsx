@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
 import { X, ChevronRight, ChevronLeft, Upload, Check, Home, MapPin, Camera, List, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { Lodge } from '../types';
 
 interface LodgeFormModalProps {
   onClose: () => void;
+  initialData?: Lodge | null;
 }
 
-const LodgeFormModal: React.FC<LodgeFormModalProps> = ({ onClose }) => {
+const LodgeFormModal: React.FC<LodgeFormModalProps> = ({ onClose, initialData }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const totalSteps = 4;
 
   // Form State
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price_numeric: 220000,
-    area: 'Permanent Site',
-    address: '',
-    bedrooms: 1,
-    bathrooms: 1,
-    amenities: [] as string[],
-    image_urls: [] as string[]
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    price_numeric: initialData?.price_numeric || 220000,
+    area: initialData?.area || 'Permanent Site',
+    address: initialData?.address || '',
+    bedrooms: initialData?.bedrooms || 1,
+    bathrooms: initialData?.bathrooms || 1,
+    amenities: initialData?.amenities || [] as string[],
+    image_urls: initialData?.image_urls || [] as string[]
   });
   const [uploading, setUploading] = useState(false);
 
@@ -92,23 +94,35 @@ const LodgeFormModal: React.FC<LodgeFormModalProps> = ({ onClose }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const { error } = await supabase
-        .from('lodges')
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          price: `₦${Number(formData.price_numeric).toLocaleString()}/year`,
-          price_numeric: formData.price_numeric,
-          area: formData.area,
-          amenities: formData.amenities,
-          image_urls: formData.image_urls.length > 0 ? formData.image_urls : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop'],
-          owner_id: user.id,
-          rating: 0,
-          review_count: 0,
-          is_verified: false,
-          bedrooms: formData.bedrooms,
-          bathrooms: formData.bathrooms
-        });
+      // Calculate 4% platform fee
+      const basePrice = Number(formData.price_numeric) || 0;
+      const fee = Math.floor(basePrice * 0.04);
+      const totalPrice = basePrice + fee;
+
+      const lodgeData = {
+        title: formData.title,
+        description: formData.description,
+        price: `₦${totalPrice.toLocaleString()}/year`,
+        price_numeric: totalPrice,
+        base_price: basePrice,
+        area: formData.area,
+        amenities: formData.amenities,
+        image_urls: formData.image_urls.length > 0 ? formData.image_urls : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop'],
+        owner_id: user.id,
+        is_verified: initialData ? initialData.is_verified : false,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        ...(initialData ? {} : { rating: 0, review_count: 0 })
+      };
+
+      const { error } = initialData
+        ? await supabase
+          .from('lodges')
+          .update(lodgeData)
+          .eq('id', initialData.id)
+        : await supabase
+          .from('lodges')
+          .insert(lodgeData);
 
       if (error) throw error;
       onClose();
@@ -206,6 +220,24 @@ const LodgeFormModal: React.FC<LodgeFormModalProps> = ({ onClose }) => {
                   />
                 </div>
               </div>
+              {/* Fee Breakdown */}
+              {formData.price_numeric > 0 && (
+                <div className="col-span-2 bg-[#1a1c1e] border border-white/5 rounded-xl p-4 space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500">Your Base Price</span>
+                    <span className="text-white">₦{Number(formData.price_numeric).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500">Platform Fee (4%)</span>
+                    <span className="text-[#c0ff72]">+ ₦{Math.floor(Number(formData.price_numeric) * 0.04).toLocaleString()}</span>
+                  </div>
+                  <div className="h-px bg-white/5 my-2" />
+                  <div className="flex justify-between text-sm font-bold">
+                    <span className="text-white">Total Listing Price</span>
+                    <span className="text-white">₦{Math.floor(Number(formData.price_numeric) * 1.04).toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -298,7 +330,7 @@ const LodgeFormModal: React.FC<LodgeFormModalProps> = ({ onClose }) => {
 
               {/* Placeholders */}
               {Array.from({ length: Math.max(0, 5 - formData.image_urls.length - 1) }).map((_, i) => (
-                <div key={i} className="aspect-square bg-[#1a1c1e] border border-white/5 rounded-2xl flex items-center justify-center text-gray-800">
+                <div key={i} className="aspect-square bg-[#1a1c1e] border border-white/5 rounded-2xl flex items-center justify-center text-gray-600">
                   <Camera size={20} />
                 </div>
               ))}
@@ -347,7 +379,7 @@ const LodgeFormModal: React.FC<LodgeFormModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
 
       <div className="relative w-full max-w-lg bg-[#16181b] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
@@ -385,7 +417,7 @@ const LodgeFormModal: React.FC<LodgeFormModalProps> = ({ onClose }) => {
                 <Loader2 className="animate-spin" size={20} />
               ) : (
                 <>
-                  {step === totalSteps ? 'Submit Listing' : 'Next Step'}
+                  {step === totalSteps ? (initialData ? 'Update Listing' : 'Submit Listing') : 'Next Step'}
                   {step < totalSteps && <ChevronRight size={20} />}
                 </>
               )}

@@ -4,12 +4,53 @@ import { LayoutGrid, List, MoreHorizontal, Building, MapPin, Star, Plus } from '
 import { supabase } from '../lib/supabase';
 import { Lodge } from '../types';
 
-const ActiveListings: React.FC = () => {
+interface ActiveListingsProps {
+  onEditLodge: (lodge: Lodge) => void;
+}
+
+const ActiveListings: React.FC<ActiveListingsProps> = ({ onEditLodge }) => {
   const [listings, setListings] = useState<Lodge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this lodge? This action cannot be undone.')) return;
+
+    try {
+      const { error } = await supabase
+        .from('lodges')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setListings(prev => prev.filter(l => l.id !== id));
+    } catch (error: any) {
+      alert(error.message || 'Error deleting lodge');
+    }
+  };
 
   useEffect(() => {
     fetchMyRecentListings();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('lodges_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lodges'
+        },
+        () => {
+          fetchMyRecentListings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchMyRecentListings = async () => {
@@ -61,7 +102,7 @@ const ActiveListings: React.FC = () => {
       <div className="space-y-4">
         {listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-white/5 rounded-3xl">
-            <Building size={48} className="text-gray-700 mb-4" />
+            <Building size={48} className="text-gray-600 mb-4" />
             <p className="text-gray-500 font-medium">You haven't listed any properties yet.</p>
             <p className="text-gray-600 text-xs mt-1 max-w-[200px]">Start adding your lodges to begin receiving inspection requests.</p>
           </div>
@@ -98,9 +139,43 @@ const ActiveListings: React.FC = () => {
                 {item.price}
               </div>
 
-              <button className="p-2 text-gray-600 hover:text-white flex-shrink-0 transition-colors">
-                <MoreHorizontal size={22} />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setActiveMenu(activeMenu === item.id ? null : item.id)}
+                  className="p-2 text-gray-600 hover:text-white flex-shrink-0 transition-colors"
+                >
+                  <MoreHorizontal size={22} />
+                </button>
+
+                {activeMenu === item.id && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setActiveMenu(null)}
+                    />
+                    <div className="absolute right-0 mt-2 w-36 bg-[#212429] border border-white/10 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                      <button
+                        onClick={() => {
+                          onEditLodge(item);
+                          setActiveMenu(null);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-300 hover:bg-[#c0ff72] hover:text-black transition-all flex items-center gap-2"
+                      >
+                        <Plus size={14} className="rotate-45" /> Edit Details
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleDelete(item.id);
+                          setActiveMenu(null);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500 hover:text-white transition-all border-t border-white/5"
+                      >
+                        Delete Listing
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           ))
         )}

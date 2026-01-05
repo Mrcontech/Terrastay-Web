@@ -5,6 +5,7 @@ import Header from './components/Header';
 import StatsOverview from './components/StatsOverview';
 import RecentInspections from './components/RecentInspections';
 import ActiveListings from './components/ActiveListings';
+import SalesHistory from './components/SalesHistory';
 import AdminDashboard from './components/AdminDashboard';
 import PropertiesView from './components/PropertiesView';
 import BookingsView from './components/BookingsView';
@@ -26,6 +27,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('agent');
   const [isAddLodgeModalOpen, setIsAddLodgeModalOpen] = useState(false);
+  const [editingLodge, setEditingLodge] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,10 +56,14 @@ const App: React.FC = () => {
             {/* Top Row: Quick Stats */}
             <StatsOverview />
 
-            {/* Main Content: Listings and Inspections */}
+            {/* Main Content: Listings, Inspections, and Sales */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-              <div className="xl:col-span-8">
-                <ActiveListings />
+              <div className="xl:col-span-8 space-y-8">
+                <ActiveListings onEditLodge={(lodge) => {
+                  setEditingLodge(lodge);
+                  setIsAddLodgeModalOpen(true);
+                }} />
+                <SalesHistory />
               </div>
               <div className="xl:col-span-4">
                 <RecentInspections />
@@ -66,7 +72,13 @@ const App: React.FC = () => {
           </div>
         );
       case 'properties':
-        return <PropertiesView onAddLodge={() => setIsAddLodgeModalOpen(true)} />;
+        return <PropertiesView onAddLodge={() => {
+          setEditingLodge(null);
+          setIsAddLodgeModalOpen(true);
+        }} onEditLodge={(lodge) => {
+          setEditingLodge(lodge);
+          setIsAddLodgeModalOpen(true);
+        }} />;
       case 'bookings':
         return <BookingsView />;
       case 'admin':
@@ -160,7 +172,10 @@ const App: React.FC = () => {
           <Header
             onMenuClick={toggleSidebar}
             viewTitle={getViewTitle()}
-            onQuickAction={() => setIsAddLodgeModalOpen(true)}
+            onQuickAction={() => {
+              setEditingLodge(null);
+              setIsAddLodgeModalOpen(true);
+            }}
           />
           {renderContent()}
         </div>
@@ -168,7 +183,13 @@ const App: React.FC = () => {
 
       {/* Modals */}
       {isAddLodgeModalOpen && (
-        <LodgeFormModal onClose={() => setIsAddLodgeModalOpen(false)} />
+        <LodgeFormModal
+          onClose={() => {
+            setIsAddLodgeModalOpen(false);
+            setEditingLodge(null);
+          }}
+          initialData={editingLodge}
+        />
       )}
     </div>
   );

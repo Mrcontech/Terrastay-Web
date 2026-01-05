@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, User, MessageSquare, MoreVertical, Phone, Info } from 'lucide-react';
+import { Search, Send, User, MessageSquare, MoreVertical, Phone, Info, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const ChatInboxView: React.FC = () => {
@@ -118,10 +118,13 @@ const ChatInboxView: React.FC = () => {
     };
 
     return (
-        <div className="flex h-[calc(100vh-12rem)] bg-[#16181b] border border-white/5 rounded-[2.5rem] overflow-hidden animate-in fade-in duration-500">
+        <div className="flex h-[calc(100vh-14rem)] md:h-[calc(100vh-12rem)] bg-[#16181b] border border-white/5 rounded-[2.5rem] overflow-hidden animate-in fade-in duration-500 relative">
             {/* Sidebar: Chat List */}
-            <div className="w-80 md:w-96 border-r border-white/5 flex flex-col bg-black/20">
-                <div className="p-6 space-y-4">
+            <div className={`
+                ${selectedChat ? 'hidden md:flex' : 'flex'} 
+                w-full md:w-80 lg:w-96 border-r border-white/5 flex flex-col bg-black/20
+            `}>
+                <div className="p-4 md:p-6 space-y-4">
                     <h2 className="text-xl font-bold">Messages</h2>
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
@@ -133,17 +136,17 @@ const ChatInboxView: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-3 space-y-1">
+                <div className="flex-1 overflow-y-auto px-2 md:px-3 space-y-1">
                     {conversations.map((chat) => (
                         <button
                             key={chat.partner.id}
                             onClick={() => setSelectedChat(chat)}
-                            className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${selectedChat?.partner.id === chat.partner.id
-                                    ? 'bg-[#c0ff72]/10 border border-[#c0ff72]/20'
-                                    : 'hover:bg-white/5 border border-transparent'
+                            className={`w-full flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-2xl transition-all ${selectedChat?.partner.id === chat.partner.id
+                                ? 'bg-[#c0ff72]/10 border border-[#c0ff72]/20'
+                                : 'hover:bg-white/5 border border-transparent'
                                 }`}
                         >
-                            <div className="w-12 h-12 rounded-full bg-[#0f1113] border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#0f1113] border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
                                 {chat.partner.avatar_url ? (
                                     <img src={chat.partner.avatar_url} alt="" className="w-full h-full object-cover" />
                                 ) : (
@@ -151,9 +154,9 @@ const ChatInboxView: React.FC = () => {
                                 )}
                             </div>
                             <div className="flex-1 text-left min-w-0">
-                                <div className="flex justify-between items-center mb-1">
+                                <div className="flex justify-between items-center mb-0.5 md:mb-1">
                                     <h4 className="font-bold text-sm truncate">{chat.partner.full_name}</h4>
-                                    <span className="text-[10px] text-gray-500">
+                                    <span className="text-[9px] md:text-[10px] text-gray-500">
                                         {new Date(chat.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                 </div>
@@ -165,89 +168,100 @@ const ChatInboxView: React.FC = () => {
             </div>
 
             {/* Main Chat Area */}
-            {selectedChat ? (
-                <div className="flex-1 flex flex-col">
-                    {/* Header */}
-                    <div className="p-6 border-b border-white/5 flex items-center justify-between bg-black/10">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-[#0f1113] border border-white/10 overflow-hidden flex items-center justify-center">
-                                {selectedChat.partner.avatar_url ? (
-                                    <img src={selectedChat.partner.avatar_url} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                    <User size={20} className="text-gray-600" />
-                                )}
-                            </div>
-                            <div>
-                                <h3 className="font-bold">{selectedChat.partner.full_name}</h3>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 bg-[#c0ff72] rounded-full animate-pulse" />
-                                    <span className="text-[10px] text-[#c0ff72] font-bold uppercase tracking-widest">Active Now</span>
+            <div className={`
+                ${selectedChat ? 'flex' : 'hidden md:flex'} 
+                flex-1 flex flex-col min-w-0
+            `}>
+                {selectedChat ? (
+                    <div className="flex-1 flex flex-col h-full overflow-hidden">
+                        {/* Header */}
+                        <div className="p-4 md:p-6 border-b border-white/5 flex items-center justify-between bg-black/10">
+                            <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                                <button
+                                    onClick={() => setSelectedChat(null)}
+                                    className="md:hidden p-2 -ml-2 hover:bg-white/5 rounded-lg text-gray-400"
+                                >
+                                    <ArrowLeft size={20} />
+                                </button>
+                                <div className="w-10 h-10 rounded-full bg-[#0f1113] border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                                    {selectedChat.partner.avatar_url ? (
+                                        <img src={selectedChat.partner.avatar_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User size={20} className="text-gray-600" />
+                                    )}
                                 </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400"><Phone size={20} /></button>
-                            <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400"><Info size={20} /></button>
-                            <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400"><MoreVertical size={20} /></button>
-                        </div>
-                    </div>
-
-                    {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-8 space-y-6">
-                        {messages.map((msg, idx) => {
-                            const isMe = msg.sender_id === currentUser?.id;
-                            return (
-                                <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[70%] space-y-1 ${isMe ? 'items-end' : 'items-start'}`}>
-                                        <div className={`px-5 py-3 rounded-3xl ${isMe
-                                                ? 'bg-[#c0ff72] text-black font-medium rounded-tr-none shadow-[0_0_20px_rgba(192,255,114,0.1)]'
-                                                : 'bg-[#0f1113] border border-white/5 text-white rounded-tl-none'
-                                            }`}>
-                                            <p className="text-sm leading-relaxed">{msg.content}</p>
-                                        </div>
-                                        <span className="text-[10px] text-gray-600 px-1">
-                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
+                                <div className="min-w-0">
+                                    <h3 className="font-bold truncate text-sm md:text-base">{selectedChat.partner.full_name}</h3>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 bg-[#c0ff72] rounded-full animate-pulse" />
+                                        <span className="text-[9px] md:text-[10px] text-[#c0ff72] font-bold uppercase tracking-widest whitespace-nowrap">Active Now</span>
                                     </div>
                                 </div>
-                            );
-                        })}
-                        <div ref={messagesEndRef} />
-                    </div>
-
-                    {/* Input */}
-                    <form onSubmit={handleSendMessage} className="p-6 bg-black/10 border-t border-white/5">
-                        <div className="flex items-center gap-4 bg-[#0f1113] border border-white/5 rounded-2xl p-2 pl-6">
-                            <input
-                                type="text"
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="Type your response..."
-                                className="flex-1 bg-transparent border-none outline-none text-sm"
-                            />
-                            <button
-                                type="submit"
-                                disabled={!newMessage.trim()}
-                                className="bg-[#c0ff72] text-black p-3 rounded-xl hover:shadow-[0_0_20px_rgba(192,255,114,0.3)] transition-all disabled:opacity-50"
-                            >
-                                <Send size={18} />
-                            </button>
+                            </div>
+                            <div className="flex items-center gap-1 md:gap-2 shrink-0">
+                                <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400"><Phone size={18} md:size={20} /></button>
+                                <button className="hidden sm:block p-2 hover:bg-white/5 rounded-lg text-gray-400"><Info size={20} /></button>
+                                <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400"><MoreVertical size={18} md:size={20} /></button>
+                            </div>
                         </div>
-                    </form>
-                </div>
-            ) : (
-                <div className="flex-1 flex flex-col items-center justify-center space-y-6 p-12 text-center">
-                    <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-gray-700">
-                        <MessageSquare size={48} />
+
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6">
+                            {messages.map((msg, idx) => {
+                                const isMe = msg.sender_id === currentUser?.id;
+                                return (
+                                    <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[85%] md:max-w-[70%] space-y-1 ${isMe ? 'items-end ml-12' : 'items-start mr-12'}`}>
+                                            <div className={`px-4 md:px-5 py-2.5 md:py-3 rounded-[1.25rem] md:rounded-3xl ${isMe
+                                                ? 'bg-[#c0ff72] text-black font-medium rounded-tr-none shadow-[0_0_20px_rgba(192,255,114,0.1)]'
+                                                : 'bg-[#0f1113] border border-white/5 text-white rounded-tl-none'
+                                                }`}>
+                                                <p className="text-sm leading-relaxed break-words">{msg.content}</p>
+                                            </div>
+                                            <span className="text-[9px] md:text-[10px] text-gray-600 px-1">
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Input */}
+                        <form onSubmit={handleSendMessage} className="p-4 md:p-6 bg-black/10 border-t border-white/5">
+                            <div className="flex items-center gap-2 md:gap-4 bg-[#0f1113] border border-white/5 rounded-xl md:rounded-2xl p-1.5 md:p-2 pl-4 md:pl-6">
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    placeholder="Type your response..."
+                                    className="flex-1 bg-transparent border-none outline-none text-sm min-w-0"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!newMessage.trim()}
+                                    className="bg-[#c0ff72] text-black p-2.5 md:p-3 rounded-lg md:rounded-xl hover:shadow-[0_0_20px_rgba(192,255,114,0.3)] transition-all disabled:opacity-50 shrink-0"
+                                >
+                                    <Send size={16} md:size={18} />
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <div>
-                        <h3 className="text-xl font-bold mb-2">Your Conversations</h3>
-                        <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                            Select a chat from the sidebar to start messaging with prospective tenants.
-                        </p>
+                ) : (
+                    <div className="hidden md:flex flex-1 flex-col items-center justify-center space-y-6 p-12 text-center">
+                        <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-gray-700">
+                            <MessageSquare size={48} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold mb-2">Your Conversations</h3>
+                            <p className="text-gray-500 text-sm max-w-xs mx-auto">
+                                Select a chat from the sidebar to start messaging with prospective tenants.
+                            </p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

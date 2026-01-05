@@ -19,39 +19,45 @@ const StatsOverview: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch My Total Lodges
-      const { count: lodgeCount } = await supabase
-        .from('lodges')
-        .select('*', { count: 'exact', head: true })
-        .eq('owner_id', user.id);
+      // Fetch user role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-      // Fetch Pending Inspections for my lodges
-      const { count: pendingCount } = await supabase
-        .from('bookings')
-        .select('*, lodges!inner(owner_id)', { count: 'exact', head: true })
-        .eq('lodges.owner_id', user.id)
-        .eq('status', 'pending');
+      const isAdmin = profile?.role === 'admin';
 
-      // Fetch Total Favorites for my lodges
-      const { count: favoritesCount } = await supabase
-        .from('favorites')
-        .select('*, lodges!inner(owner_id)', { count: 'exact', head: true })
-        .eq('lodges.owner_id', user.id);
+      // 1. Total Listings
+      let lodgeQuery = supabase.from('lodges').select('*', { count: 'exact', head: true });
+      if (!isAdmin) lodgeQuery = lodgeQuery.eq('owner_id', user.id);
+      const { count: lodgeCount } = await lodgeQuery;
 
-      // Fetch Confirmed Inspections for today for my lodges
-      const today = new Date().toISOString().split('T')[0];
-      const { count: confirmedToday } = await supabase
-        .from('bookings')
-        .select('*, lodges!inner(owner_id)', { count: 'exact', head: true })
-        .eq('lodges.owner_id', user.id)
-        .eq('status', 'confirmed')
-        .eq('inspection_date', today);
+      // 2. Total Revenue from successful payments
+      let revQuery = supabase.from('payments').select('amount').eq('status', 'success');
+      if (!isAdmin) {
+        // If agent, we need to filter by lodges they own
+        const { data: agentLodges } = await supabase.from('lodges').select('id').eq('owner_id', user.id);
+        const lodgeIds = agentLodges?.map(l => l.id) || [];
+        if (lodgeIds.length > 0) revQuery = revQuery.in('lodge_id', lodgeIds);
+        else revQuery = revQuery.eq('id', 'non-existent'); // Force zero if no lodges
+      }
+      const { data: paymentsData } = await revQuery;
+      const totalRevenue = (paymentsData || []).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+      // 3. Rented Lodges count
+      const rentedCount = paymentsData?.length || 0;
+
+      // 4. Pending Inspections
+      let pendingQuery = supabase.from('bookings').select('*, lodges!inner(owner_id)', { count: 'exact', head: true }).eq('status', 'pending');
+      if (!isAdmin) pendingQuery = pendingQuery.eq('lodges.owner_id', user.id);
+      const { count: pendingCount } = await pendingQuery;
 
       setStats([
-        { label: 'My Properties', value: (lodgeCount || 0).toString(), unit: 'Lodges', loading: false },
-        { label: 'Total Favorites', value: (favoritesCount || 0).toString(), unit: 'Saves', loading: false },
-        { label: 'Pending Inspections', value: (pendingCount || 0).toString(), unit: 'Requests', loading: false },
-        { label: 'Total Confirmed', value: (confirmedToday || 0).toString(), unit: 'Bookings', loading: false },
+        { label: 'Total Listings', value: (lodgeCount || 0).toString(), unit: 'Lodges', loading: false },
+        { label: 'Total Revenue', value: `₦${totalRevenue.toLocaleString()}`, unit: '', loading: false },
+        { label: 'Rented Lodges', value: (rentedCount || 0).toString(), unit: 'Sold', loading: false },
+        { label: 'Pending Inquiries', value: (pendingCount || 0).toString(), unit: 'Requests', loading: false },
       ]);
     } catch (error) {
       console.error('Error fetching stats:', error);

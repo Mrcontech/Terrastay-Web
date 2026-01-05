@@ -1,3 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: "Questrial", sans-serif;
+    --font-display: "Questrial", sans-serif;
+    --font-cursive: "Pacifico", cursive;
+
+    --color-primary: #c0ff72;
+    --color-background: #0f1113;
+    --color-surface: #16181b;
+}
+
 /* Global Styles */
 :root {
     --neon-lime: #c0ff72;
@@ -8,6 +20,7 @@
 body {
     background-color: var(--bg-dark);
     color: white;
+    font-family: "Questrial", sans-serif;
     -webkit-font-smoothing: antialiased;
 }
 
