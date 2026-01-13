@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { LayoutGrid, List, MoreHorizontal, Building, MapPin, Star, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Lodge } from '../types';
+import VerificationPerksCard from './VerificationPerksCard';
 
 interface ActiveListingsProps {
   onEditLodge: (lodge: Lodge) => void;
@@ -13,6 +13,7 @@ const ActiveListings: React.FC<ActiveListingsProps> = ({ onEditLodge }) => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this lodge? This action cannot be undone.')) return;
@@ -36,6 +37,17 @@ const ActiveListings: React.FC<ActiveListingsProps> = ({ onEditLodge }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      // 1. Fetch Verification Status
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_identity_verified')
+        .eq('id', user.id)
+        .single();
+
+      setIsVerified(profile?.is_identity_verified || false);
+
+      // 2. Fetch Listings
       const { data, error } = await supabase.from('lodges').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(4);
       if (error) throw error;
       setListings(data || []);
@@ -79,6 +91,12 @@ const ActiveListings: React.FC<ActiveListingsProps> = ({ onEditLodge }) => {
           </button>
         </div>
       </div>
+
+      <VerificationPerksCard
+        isVerified={isVerified}
+        onVerifyClick={() => {/* Logic for verification modal */ }}
+      />
+
 
       <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
         {listings.length === 0 ? (

@@ -40,7 +40,7 @@ const StatsOverview: React.FC = () => {
         const { data: agentLodges } = await supabase.from('lodges').select('id').eq('owner_id', user.id);
         const lodgeIds = agentLodges?.map(l => l.id) || [];
         if (lodgeIds.length > 0) revQuery = revQuery.in('lodge_id', lodgeIds);
-        else revQuery = revQuery.eq('id', 'non-existent'); // Force zero if no lodges
+        else revQuery = revQuery.eq('id', '00000000-0000-0000-0000-000000000000'); // Force zero if no lodges
       }
       const { data: paymentsData } = await revQuery;
       const totalRevenue = (paymentsData || []).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);

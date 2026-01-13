@@ -234,7 +234,9 @@ const AdminDashboard: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-sm font-bold text-white group-hover:text-[#c0ff72] transition-colors">{agent.full_name || 'Anonymous Agent'}</p>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Verified Partner</p>
+                            <p className={`text-[10px] font-bold uppercase tracking-tighter ${agent.is_identity_verified ? 'text-[#c0ff72]' : 'text-gray-500'}`}>
+                              {agent.is_identity_verified ? 'Verified Partner' : 'Standard Agent'}
+                            </p>
                           </div>
                         </div>
                       </td>

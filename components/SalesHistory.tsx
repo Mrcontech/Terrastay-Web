@@ -22,7 +22,7 @@ const SalesHistory: React.FC = () => {
                 .from('profiles')
                 .select('role')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
 
             const isAdmin = profile?.role === 'admin';
 

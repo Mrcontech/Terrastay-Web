@@ -18,6 +18,7 @@ import AdminBookingsView from './components/AdminBookingsView';
 import AdminVerificationView from './components/AdminVerificationView';
 import IdentityVerificationView from './components/IdentityVerificationView';
 import VerificationBanner from './components/VerificationBanner';
+import OnboardingView from './components/OnboardingView';
 import { supabase } from './lib/supabase';
 import { X } from 'lucide-react';
 
@@ -30,6 +31,7 @@ const App: React.FC = () => {
   const [editingLodge, setEditingLodge] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -41,10 +43,29 @@ const App: React.FC = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) {
+        fetchProfile(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setOnboardingCompleted(data?.onboarding_completed ?? false);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      setOnboardingCompleted(false);
+    }
+  };
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -141,6 +162,18 @@ const App: React.FC = () => {
 
   if (!session) {
     return <Auth onSuccess={() => { }} />;
+  }
+
+  if (onboardingCompleted === false) {
+    return (
+      <OnboardingView
+        onComplete={() => setOnboardingCompleted(true)}
+        onVerify={() => {
+          setOnboardingCompleted(true);
+          setCurrentView('kyc');
+        }}
+      />
+    );
   }
 
   return (
